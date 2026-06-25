@@ -2,6 +2,13 @@
 
 Creado por: **vamp9**
 
+[![Language](https://img.shields.io/badge/Language-C-00599C?style=flat&logo=c&logoColor=white)](https://en.wikipedia.org/wiki/C_(programming_language))
+[![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?style=flat&logo=windows&logoColor=white)](https://www.microsoft.com/windows)
+[![API](https://img.shields.io/badge/API-Win32-0078D4?style=flat&logo=microsoft&logoColor=white)](https://learn.microsoft.com/en-us/windows/win32/)
+[![GPU APIs](https://img.shields.io/badge/GPU_APIs-NVAPI_%26_ADL-76B900?style=flat&logo=nvidia&logoColor=white)](https://developer.nvidia.com/nvapi)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat)](LICENSE)
+[![Overhead](https://img.shields.io/badge/Overhead-Zero-success?style=flat)](#)
+
 Overlay nativo de monitorización de rendimiento de hardware en tiempo real escrito en C puro (Win32 API). Diseñado con enfoque en cero consumo de recursos adicionales (Zero Overhead) y portabilidad directa sin dependencias externas.
 
 ---
