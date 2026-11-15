@@ -6,7 +6,7 @@ try {
     New-Item -ItemType Directory -Force dist | Out-Null
     & windres resource.rc -o dist/resource.o
     if ($LASTEXITCODE) { throw 'Resource compilation failed.' }
-    & g++ -std=c++17 -Wall -Wextra -O2 -mwindows -static -static-libgcc -static-libstdc++ main.cpp hardware_monitor.cpp dist/resource.o -o dist/hw_monitor.exe -luser32 -lkernel32 -lgdi32 -lshell32 -ladvapi32 -lpdh -ldxgi
+    & g++ -std=c++17 -Wall -Wextra -O2 -mwindows -static -static-libgcc -static-libstdc++ main.cpp hardware_monitor.cpp runtime_bundle.cpp dist/resource.o -o dist/hw_monitor.exe -luser32 -lkernel32 -lgdi32 -lshell32 -ladvapi32 -lpdh -ldxgi -lsetupapi -lole32
     if ($LASTEXITCODE) { throw 'C++ compilation failed.' }
     & g++ -std=c++17 -Wall -Wextra -O2 -static tests/telemetry_tests.cpp -I. -o dist/telemetry_tests.exe
     if ($LASTEXITCODE) { throw 'Test compilation failed.' }

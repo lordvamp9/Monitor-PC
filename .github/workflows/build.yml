@@ -19,17 +19,15 @@ jobs:
         shell: pwsh
         run: |
           $env:PATH = "${{ steps.msys2.outputs.msys2-location }}\ucrt64\bin;$env:PATH"
-          ./setup-collectors.ps1
-          g++ -std=c++17 -Wall -Wextra -O2 -static tests/monitor_smoke.cpp hardware_monitor.cpp -I. -o dist/monitor_smoke.exe -lpdh -ldxgi -ladvapi32 -luser32
+          ./package.ps1
+          g++ -std=c++17 -Wall -Wextra -O2 -static tests/monitor_smoke.cpp hardware_monitor.cpp runtime_bundle.cpp -I. -o dist/monitor_smoke.exe -lpdh -ldxgi -ladvapi32 -luser32 -lsetupapi -lole32
           if ($LASTEXITCODE) { throw 'Smoke test compilation failed' }
           ./dist/monitor_smoke.exe
           if ($LASTEXITCODE) { throw 'Live CPU/RAM smoke test failed' }
       - uses: actions/upload-artifact@v4
         with:
-          name: Monitor-PC-windows-x64
+          name: Monitor-PC-single-executable-windows-x64
           path: |
-            dist/hw_monitor.exe
+            dist/MonitorPC.exe
             dist/LICENSE
-            dist/sensors/
-            dist/tools/
-            dist/licenses/
+            dist/licenses/THIRD_PARTY_NOTICES.md

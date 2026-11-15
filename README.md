@@ -1,5 +1,7 @@
 # Monitor PC
 
+![Monitor PC](docs/images/brand-banner.png)
+
 **Real hardware telemetry. A clean, floating overlay.**
 
 [![Windows build](https://github.com/lordvamp9/Monitor-PC/actions/workflows/build.yml/badge.svg)](https://github.com/lordvamp9/Monitor-PC/actions/workflows/build.yml)
@@ -33,41 +35,15 @@ CPU/RAM/GPU load are whole-system readings, not the foreground game's resource c
 
 *Captured from the application's own render surface. Values reflect the capture environment. Presentation backgrounds are added for readability; `N/A` is intentional when a provider cannot return a reading.*
 
-## Build and run
+## Download and run
 
-Target: **Windows 10/11 x64**, with current graphics drivers. Building requires **MinGW-w64** (`g++`, `windres`), **PowerShell**, and the **.NET 8 SDK or newer** for the sensor helper. Initial dependency downloads require Internet access.
+[Download MonitorPC.exe](https://github.com/lordvamp9/Monitor-PC/releases/latest/download/MonitorPC.exe), open it, and approve the Windows permission prompt. The executable contains its collectors and runtime; no installation or separate downloads are required. Windows controls the permission prompt.
 
-```powershell
-git clone https://github.com/lordvamp9/Monitor-PC.git
-cd Monitor-PC
-./setup-collectors.ps1
-./dist/hw_monitor.exe
-```
+The application prepares its components automatically and tracks the foreground application. Right-click the tray icon to exit or view third-party licenses. It cleans up its temporary workspace on normal exit. Incompatible sensors or games show `N/A`; exclusive fullscreen may hide the overlay.
 
-The setup script builds the native executable, runs telemetry tests, publishes a self-contained sensor helper, and downloads the pinned PresentMon collector and license notices. Keep the complete output layout together:
+## Build from source
 
-```text
-dist/
-  hw_monitor.exe
-  LICENSE
-  sensors/          # MonitorSensors.exe, library, runtime and dependency files
-  tools/PresentMon.exe
-  licenses/         # Third-party license and notice files
-```
-
-Right-click the tray icon and choose **Exit** to close the overlay and its collectors. Only one overlay instance runs per user session. The application never asks to elevate itself automatically. If CPU sensors or ETW capture require elevation, close it and use **Run as administrator** only if you choose to allow that access.
-
-For the native overlay alone, run `./build.ps1`. It works without optional collectors, with unavailable temperature/FPS values shown as `N/A`. `mingw32-make` is also supported; its executable is created in the repository root, so collectors must be placed alongside that executable in the layout above.
-
-Alternative native build with CMake:
-
-```powershell
-cmake -S . -B build -G "MinGW Makefiles"
-cmake --build build
-ctest --test-dir build --output-on-failure
-```
-
-CMake builds the native application and telemetry tests. Use the setup script for the complete collector package. GitHub Actions builds and tests Windows x64 and uploads a complete `Monitor-PC-windows-x64` artifact on successful runs. Download an artifact from the [Actions page](https://github.com/lordvamp9/Monitor-PC/actions).
+Windows x64, MinGW-w64, PowerShell and .NET 8 SDK are required. Run `./package.ps1` to build and test the single executable at `dist/MonitorPC.exe`. `./package.ps1 -UseExistingCollectors` reuses an existing developer build. The first build downloads the pinned dependencies.
 
 ## Hardware compatibility
 

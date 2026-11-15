@@ -2,6 +2,7 @@
 #define NOMINMAX
 #include "hardware_monitor.h"
 #include "telemetry.h"
+#include "runtime_bundle.h"
 #include <pdh.h>
 #include <pdhmsg.h>
 #include <dxgi.h>
@@ -22,9 +23,7 @@ SystemSpecs specs;
 std::atomic<bool> stopping{false};
 std::thread worker;
 std::filesystem::path directory() {
-    wchar_t path[32768]{};
-    GetModuleFileNameW(nullptr, path, 32768);
-    return std::filesystem::path(path).parent_path();
+    return GetRuntimeDirectory();
 }
 // Own both the process and its descendants. Exit cannot leave collectors behind.
 class Collector {

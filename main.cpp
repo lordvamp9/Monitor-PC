@@ -9,10 +9,13 @@
 #include <fstream>
 #include <vector>
 #include "hardware_monitor.h"
+#include "runtime_bundle.h"
+#include <exception>
 
 #define ID_TIMER 1
 #define WM_TRAYICON (WM_USER + 1)
 #define ID_TRAY_EXIT 1001
+#define ID_TRAY_LICENSES 1002
 
 #define WINDOW_WIDTH 450
 #define WINDOW_HEIGHT 380
@@ -66,6 +69,7 @@ void ShowContextMenu(HWND hwnd) {
     POINT pt;
     GetCursorPos(&pt);
     HMENU hMenu = CreatePopupMenu();
+    InsertMenu(hMenu, -1, MF_BYPOSITION | MF_STRING, ID_TRAY_LICENSES, "Third-party licenses");
     InsertMenu(hMenu, -1, MF_BYPOSITION | MF_STRING, ID_TRAY_EXIT, "Exit");
     SetForegroundWindow(hwnd);
     TrackPopupMenu(hMenu, TPM_BOTTOMALIGN | TPM_LEFTALIGN, pt.x, pt.y, 0, hwnd, NULL);
@@ -137,6 +141,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             break;
 
         case WM_COMMAND:
+            if (LOWORD(wParam) == ID_TRAY_LICENSES) {
+                const auto licenses = GetRuntimeDirectory() / L"licenses";
+                ShellExecuteW(hwnd, L"open", licenses.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+            }
             if (LOWORD(wParam) == ID_TRAY_EXIT) {
                 DestroyWindow(hwnd);
             }
@@ -257,6 +265,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     const char CLASS_NAME[] = "HwMonitorOverlayClass";
     HANDLE instance = CreateMutexW(nullptr, TRUE, L"Local\\MonitorPCOverlay");
     if (!instance || GetLastError() == ERROR_ALREADY_EXISTS) { if (instance) CloseHandle(instance); return 0; }
+    try { PrepareRuntime(); }
+    catch (const std::exception& error) {
+        MessageBoxA(nullptr, error.what(), "Monitor PC", MB_OK | MB_ICONERROR);
+        CloseHandle(instance); return 1;
+    }
 
     WNDCLASS wc = {};
     wc.lpfnWndProc   = WndProc;
@@ -267,7 +280,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wc.hIcon         = LoadIcon(hInstance, MAKEINTRESOURCE(101));
 
     SetProcessDPIAware();
-    if (!RegisterClass(&wc)) return 1;
+    if (!RegisterClass(&wc)) { CleanupRuntime(); CloseHandle(instance); return 1; }
 
     HWND hwnd = CreateWindowEx(
         WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE,
@@ -279,7 +292,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     );
 
     if (hwnd == NULL) {
-        return 0;
+        CleanupRuntime(); CloseHandle(instance); return 1;
     }
 
     SetLayeredWindowAttributes(hwnd, RGB(255, 0, 255), 0, LWA_COLORKEY);
@@ -292,6 +305,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         DispatchMessage(&msg);
     }
 
-    CloseHandle(instance);
+    CleanupRuntime(); CloseHandle(instance);
     return 0;
 }
