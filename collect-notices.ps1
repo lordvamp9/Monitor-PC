@@ -19,3 +19,18 @@ foreach ($library in $assets.libraries.PSObject.Properties) {
             }
     }
 }
+# Runtime packs are SDK download dependencies, not entries in assets.libraries.
+# Preserve their root license texts as well as ordinary NuGet package notices.
+foreach ($folder in $assets.packageFolders.PSObject.Properties.Name) {
+    Get-ChildItem $folder -Directory -Filter 'microsoft.netcore.app.runtime.*' |
+        ForEach-Object {
+            $runtimeName = $_.Name
+            Get-ChildItem $_.FullName -Directory | ForEach-Object {
+                $runtimeDestination = Join-Path $destination "$runtimeName-$($_.Name)"
+                New-Item -ItemType Directory -Force $runtimeDestination | Out-Null
+                Get-ChildItem $_.FullName -File |
+                    Where-Object { $_.Name -match '(?i)license|third.?party|notice|\.nuspec$' } |
+                    Copy-Item -Destination $runtimeDestination
+            }
+        }
+}

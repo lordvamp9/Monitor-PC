@@ -12,6 +12,6 @@ Monitor PC's original C++ application and sensor bridge are MIT licensed. Depend
 
 The sensor library is used without source modifications. Its corresponding source is available at the versioned link above. LibreHardwareMonitor includes additional components, including low-level sensor access libraries; its bundled third-party license document must accompany redistribution.
 
-`setup-collectors.ps1` downloads the pinned PresentMon executable and license texts, copies LibreHardwareMonitor's MPL and third-party notices, and collects available license/notice files and package metadata from resolved NuGet dependencies into `dist/licenses/`. The self-contained .NET output also retains its runtime license and third-party notices. Keep these files with distributed builds. Review notices again when changing dependencies.
+`setup-collectors.ps1` downloads the pinned PresentMon executable and license texts, copies LibreHardwareMonitor's MPL and third-party notices, and collects available license/notice files and package metadata from resolved NuGet dependencies into `dist/licenses/`. Runtime-pack license and third-party notices are also copied there for the self-contained .NET helper. Keep these files with distributed builds. Review notices again when changing dependencies.
 
 Windows and GPU drivers are supplied by their respective vendors and are not redistributed by this repository. Hardware and product names belong to their owners. Monitor PC is an independent project.
