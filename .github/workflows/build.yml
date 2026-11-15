@@ -1,0 +1,35 @@
+name: Windows build
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - uses: msys2/setup-msys2@v2
+        id: msys2
+        with:
+          msystem: UCRT64
+          update: true
+          install: mingw-w64-ucrt-x86_64-gcc
+          path-type: inherit
+      - name: Build, test and package collectors
+        shell: pwsh
+        run: |
+          $env:PATH = "${{ steps.msys2.outputs.msys2-location }}\ucrt64\bin;$env:PATH"
+          ./setup-collectors.ps1
+          g++ -std=c++17 -Wall -Wextra -O2 -static tests/monitor_smoke.cpp hardware_monitor.cpp -I. -o dist/monitor_smoke.exe -lpdh -ldxgi -ladvapi32 -luser32
+          if ($LASTEXITCODE) { throw 'Smoke test compilation failed' }
+          ./dist/monitor_smoke.exe
+          if ($LASTEXITCODE) { throw 'Live CPU/RAM smoke test failed' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Monitor-PC-windows-x64
+          path: |
+            dist/hw_monitor.exe
+            dist/LICENSE
+            dist/sensors/
+            dist/tools/
+            dist/licenses/

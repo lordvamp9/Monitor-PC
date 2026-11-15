@@ -1,20 +1,10 @@
-CC = gcc
-CFLAGS = -Wall -Wextra -O2 -mwindows
-LIBS = -luser32 -lkernel32 -lgdi32 -lcomctl32 -lmsimg32 -ldwmapi -lpdh
-
+CXX = g++
+CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -mwindows -static
+LIBS = -luser32 -lkernel32 -lgdi32 -lshell32 -ladvapi32 -lpdh -ldxgi
 all: hw_monitor.exe
-
-hw_monitor.exe: main.o hardware_monitor.o resource.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
-
-main.o: main.c hardware_monitor.h
-	$(CC) $(CFLAGS) -c $<
-
-hardware_monitor.o: hardware_monitor.c hardware_monitor.h
-	$(CC) $(CFLAGS) -c $<
-
+hw_monitor.exe: main.cpp hardware_monitor.cpp hardware_monitor.h telemetry.h resource.o
+	$(CXX) $(CXXFLAGS) main.cpp hardware_monitor.cpp resource.o -o $@ $(LIBS)
 resource.o: resource.rc app.manifest icon.ico
 	windres resource.rc -o resource.o
-
 clean:
-	del /Q *.o hw_monitor.exe
+	powershell -NoProfile -Command "Remove-Item -ErrorAction SilentlyContinue *.o, hw_monitor.exe"

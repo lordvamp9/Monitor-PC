@@ -34,3 +34,11 @@ __pycache__/
 *~
 *.bak
 *.tmp
+
+# Build output
+.codex/
+.agents/
+dist/
+build/
+sensors/bin/
+sensors/obj/

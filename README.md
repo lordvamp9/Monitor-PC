@@ -1,55 +1,111 @@
-# Hardware Analyzer & Monitor
+# Monitor PC
 
-Creado por: **vamp9**
+**Real hardware telemetry. A clean, floating overlay.**
 
-[![Language](https://img.shields.io/badge/Language-C-00599C?style=flat&logo=c&logoColor=white)](https://en.wikipedia.org/wiki/C_(programming_language))
-[![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?style=flat&logo=windows&logoColor=white)](https://www.microsoft.com/windows)
-[![API](https://img.shields.io/badge/API-Win32-0078D4?style=flat&logo=microsoft&logoColor=white)](https://learn.microsoft.com/en-us/windows/win32/)
-[![GPU APIs](https://img.shields.io/badge/GPU_APIs-NVAPI_%26_ADL-76B900?style=flat&logo=nvidia&logoColor=white)](https://developer.nvidia.com/nvapi)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat)](LICENSE)
-[![Overhead](https://img.shields.io/badge/Overhead-Zero-success?style=flat)](#)
+[![Windows build](https://github.com/lordvamp9/Monitor-PC/actions/workflows/build.yml/badge.svg)](https://github.com/lordvamp9/Monitor-PC/actions/workflows/build.yml)
+![C++17](https://img.shields.io/badge/C%2B%2B-17-00c8ff?logo=cplusplus&logoColor=white)
+![Windows](https://img.shields.io/badge/platform-Windows%2010%2F11-0078d4)
+[![License: MIT](https://img.shields.io/badge/license-MIT-00e676)](LICENSE)
+![Sensors](https://img.shields.io/badge/sensors-LibreHardwareMonitor-ff7896)
+![FPS](https://img.shields.io/badge/FPS-PresentMon-ff7800)
 
-Overlay nativo de monitorización de rendimiento de hardware en tiempo real escrito en C puro (Win32 API). Diseñado con enfoque en cero consumo de recursos adicionales (Zero Overhead) y portabilidad directa sin dependencias externas.
+![Monitor PC overview](docs/images/hero.png)
 
----
+A Windows hardware overlay built with C++17 and the Win32 API. Colored metrics, two live history graphs, a transparent background, and click-through interaction preserve the original visual design. The telemetry backend has been rebuilt to use measured data and explicit unavailable states.
 
-> [!WARNING]
-> ### ADVERTENCIA IMPORTANTE SOBRE ANTI-CHEATS (VANGUARD / RIO T / COMPETITIVOS)
-> El uso de este monitor de hardware junto con videojuegos que utilicen sistemas anti-trampas a nivel de kernel (como **Valorant Vanguard**, **Easy Anti-Cheat**, **BattlEye** o **Ricochet**) se realiza **bajo tu propia responsabilidad**. 
-> 
-> Aunque la aplicación no inyecta código en los juegos, no hace DLL Hooking y simula la tasa de FPS de manera heurística precisamente para evitar disparar alertas de seguridad, **no garantizamos que estos sistemas de seguridad de kernel no marquen el overlay como software no autorizado**. Te recomendamos encarecidamente **no arriesgar tu cuenta** y evitar ejecutar el overlay de forma simultánea con juegos competitivos protegidos por software de nivel Ring-0 (Kernel) si deseas evitar posibles bloqueos o suspensiones de cuenta.
+**No simulated temperatures. No fabricated FPS. Missing readings show `N/A`.**
 
----
+## What it measures
 
-## Características principales
+| Metric | Source | Meaning |
+| --- | --- | --- |
+| CPU utilization | Windows `GetSystemTimes` | System-wide busy time sampled once per second |
+| RAM | Windows `GlobalMemoryStatusEx` | Used physical memory and percentage; displayed GB values are binary GiB |
+| GPU utilization | Windows PDH GPU Engine counters + DXGI, with sensor-provider fallback | Busiest engine on the most active detected adapter; provider GPU core load when counters are unavailable |
+| CPU temperature | LibreHardwareMonitor helper | Hottest available CPU package/core sensor |
+| GPU temperature | LibreHardwareMonitor helper | Core temperature matched by adapter name; unavailable matches stay `N/A` |
+| FPS | PresentMon ETW console collector | Present rate of the foreground process, using its fastest active swap chain |
+| History | Measured CPU/GPU utilization | Up to 100 one-second samples; unavailable samples leave gaps |
 
-- **Monitoreo Universal de Recursos**: Consumo de CPU, GPU y memoria RAM extraído directamente mediante la librería nativa de Windows `PDH` (Performance Data Helpers). Compatible con cualquier arquitectura y fabricante (NVIDIA, AMD, Intel).
-- **Métricas de Temperatura Inteligentes**:
-  - Lectura nativa de temperatura para tarjetas **NVIDIA** cargando dinámicamente `nvapi.dll` / `nvapi64.dll`.
-  - Lectura nativa para tarjetas **AMD** cargando dinámicamente la biblioteca ADL (`atiadlxx.dll` / `atiadlxy.dll`).
-  - Algoritmo térmico inteligente de respaldo (Fallback) para GPU integradas (Intel) o en entornos virtuales, estimando de forma matemática la temperatura según la carga de procesamiento real.
-- **Algoritmo de FPS Simulados**: Para evitar técnicas de Hooking de DirectX/OpenGL o ETW (bloqueadas directamente por anti-cheats agresivos como Vanguard), el monitor estima los FPS basándose en la carga cruzada de CPU/GPU y añade ruido de micro-stuttering coherente con el rendimiento real.
-- **Transparencia Click-through**: Configurado nativamente a través de las capas de renderizado DWM de Windows (`LWA_COLORKEY`) para actuar como una ventana fantasma sobre la cual se puede interactuar sin obstaculizar los clics en el juego.
+CPU/RAM/GPU load are whole-system readings, not the foreground game's resource consumption. FPS counts application presents, not necessarily frames actually displayed, and is not a generated-frame counter. Switching focus changes the FPS target. The overlay remains visible on the desktop and in compatible windowed/borderless applications.
 
-## Compilación y Ejecución
+![Actual overlay capture](docs/images/overlay.png)
 
-### Requisitos previos
-- Compilador de C compatible con Windows (por ejemplo, GCC mediante MinGW).
-- Herramienta `make` o similar.
+*Captured from the application's own render surface. Values reflect the capture environment. Presentation backgrounds are added for readability; `N/A` is intentional when a provider cannot return a reading.*
 
-### Compilar el proyecto
-Ejecuta el siguiente comando en la carpeta raíz del proyecto:
-```bash
-make
+## Build and run
+
+Target: **Windows 10/11 x64**, with current graphics drivers. Building requires **MinGW-w64** (`g++`, `windres`), **PowerShell**, and the **.NET 8 SDK or newer** for the sensor helper. Initial dependency downloads require Internet access.
+
+```powershell
+git clone https://github.com/lordvamp9/Monitor-PC.git
+cd Monitor-PC
+./setup-collectors.ps1
+./dist/hw_monitor.exe
 ```
 
-Esto generará el archivo ejecutable `hw_monitor.exe`.
+The setup script builds the native executable, runs telemetry tests, publishes a self-contained sensor helper, and downloads the pinned PresentMon collector and license notices. Keep the complete output layout together:
 
-### Ejecución
-1. Haz doble clic en `hw_monitor.exe`.
-2. El overlay se iniciará y monitorizará automáticamente los recursos del sistema cuando una aplicación o videojuego pase a pantalla completa.
-3. Para cerrarlo, haz clic derecho sobre el ícono de la aplicación en la bandeja del sistema (System Tray, al lado del reloj de Windows) y selecciona **Salir**.
+```text
+dist/
+  hw_monitor.exe
+  LICENSE
+  sensors/          # MonitorSensors.exe, library, runtime and dependency files
+  tools/PresentMon.exe
+  licenses/         # Third-party license and notice files
+```
 
-## Licencia
+Right-click the tray icon and choose **Exit** to close the overlay and its collectors. Only one overlay instance runs per user session. The application never asks to elevate itself automatically. If CPU sensors or ETW capture require elevation, close it and use **Run as administrator** only if you choose to allow that access.
 
-Este proyecto está bajo la Licencia MIT. Consulta el archivo `LICENSE` para ver los créditos y detalles de autoría asociados a **vamp9**.
+For the native overlay alone, run `./build.ps1`. It works without optional collectors, with unavailable temperature/FPS values shown as `N/A`. `mingw32-make` is also supported; its executable is created in the repository root, so collectors must be placed alongside that executable in the layout above.
+
+Alternative native build with CMake:
+
+```powershell
+cmake -S . -B build -G "MinGW Makefiles"
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+CMake builds the native application and telemetry tests. Use the setup script for the complete collector package. GitHub Actions builds and tests Windows x64 and uploads a complete `Monitor-PC-windows-x64` artifact on successful runs. Download an artifact from the [Actions page](https://github.com/lordvamp9/Monitor-PC/actions).
+
+## Hardware compatibility
+
+The application discovers graphics adapters through DXGI rather than assuming a particular registry entry or GPU model. When Windows counters are unavailable, matching GPU core load from the sensor helper is used. Its providers are intended for NVIDIA, AMD, and Intel hardware. On multi-GPU systems the GPU row follows the adapter with the highest measured engine utilization; it does not sum independent adapters together.
+
+**Broad compatibility is the goal, not a guarantee that every sensor exists on every machine.** Some laptops, older graphics drivers, virtual machines, and newer or unsupported devices expose fewer readings. Windows GPU counters require compatible WDDM drivers. CPU time reporting on systems with more than 64 logical processors follows Windows processor-group restrictions of `GetSystemTimes`.
+
+LibreHardwareMonitor may need administrator privileges and a supported low-level sensor driver for CPU temperatures. Windows security policies or another driver can prevent access. Do not disable security features to obtain a reading. If access fails, the overlay continues with `N/A`. GPU core temperature matching is conservative: differing device names can leave a reading unavailable rather than attach a temperature to the wrong GPU.
+
+PresentMon uses ETW instead of injecting this overlay into a game. ETW permissions, the graphics API, driver, game and anti-cheat rules can affect availability. Compatibility with every anti-cheat is **not guaranteed**. Exclusive fullscreen may cover a normal desktop overlay; use windowed or borderless mode where necessary.
+
+## Troubleshooting
+
+| Symptom | Check |
+| --- | --- |
+| All temperatures show `N/A` | Ensure `sensors/MonitorSensors.exe` and its files are beside the overlay; check sensor permissions and supported hardware |
+| GPU usage shows `N/A` | Check graphics drivers and Windows GPU Engine performance counters |
+| FPS shows `N/A` | Focus a rendering application; verify `tools/PresentMon.exe` exists and ETW capture is permitted |
+| GPU temperature alone shows `N/A` | The selected adapter may lack a core sensor or use a different name in the sensor provider |
+| Overlay is hidden in a game | Try borderless/windowed mode; exclusive fullscreen support is not promised |
+| Build fails | Confirm `g++`, `windres`, and `dotnet` are on PATH and dependency sources are reachable |
+
+The collectors can also be run directly from PowerShell to inspect their output/errors. `./dist/sensors/MonitorSensors.exe` streams temperatures until stopped. PresentMon's supported flags are available through `./dist/tools/PresentMon.exe --help`.
+
+## Development
+
+| File | Responsibility |
+| --- | --- |
+| `main.cpp` | Original Win32/GDI overlay, tray menu and render-surface capture |
+| `hardware_monitor.cpp` | Windows telemetry, GPU discovery, collector lifecycle, synchronized snapshots |
+| `telemetry.h` | CSV parsing, measured FPS aggregation and GPU engine aggregation |
+| `sensors/` | Small C#/.NET bridge to LibreHardwareMonitor; UI stays native C++ |
+| `tests/` | Telemetry edge cases and live CPU/RAM smoke test |
+
+The C++ application owns collector processes in a Windows job object. Closing it stops its dedicated ETW session and reaps child processes. Missing, malformed or stale readings are not replaced with estimates. Collectors have measurable resource usage: this project makes no zero-overhead claim.
+
+To export the live overlay without capturing the rest of the desktop, start `hw_monitor.exe --capture`. After 30 seconds it writes `overlay-capture.bmp` beside the executable. Close any existing instance first. Capture reflects real readings; it does not enable a demo-data mode.
+
+## License and credits
+
+Created by **vamp9**. Original application code: [MIT](LICENSE). Optional dependencies retain their licenses, including MPL-2.0 for LibreHardwareMonitor. See [third-party notices](THIRD_PARTY_NOTICES.md) and the license files distributed with builds. No proprietary monitoring application or GPU driver is bundled.
