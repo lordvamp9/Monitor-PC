@@ -97,7 +97,14 @@ void CleanupRuntime() {
     const auto resolved = std::filesystem::weakly_canonical(runtimeDirectory, error);
     const auto parent = std::filesystem::weakly_canonical(temporaryBase, error);
     if (!error && resolved.parent_path() == parent &&
-        resolved.filename().wstring().rfind(L"MPC-", 0) == 0)
-        std::filesystem::remove_all(resolved, error);
+        resolved.filename().wstring().rfind(L"MPC-", 0) == 0) {
+        // Windows may briefly retain file handles after collector termination.
+        for (int attempt = 0; attempt < 30; ++attempt) {
+            error.clear();
+            std::filesystem::remove_all(resolved, error);
+            if (!error && !std::filesystem::exists(resolved)) break;
+            Sleep(200);
+        }
+    }
     runtimeDirectory.clear(); ownsRuntime = false;
 }
